@@ -217,7 +217,7 @@ def aplicar_estilo_chess_com():
             border-radius: 0px !important; /* Remove as bordas arredondadas */
             border: none !important;
             background-color: #739552 !important; /* Verde Chess.com */
-            font-size: 38px !important; /* Tamanho da peça */
+            font-size: 100px !important; /* Tamanho da peça */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -382,3 +382,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
