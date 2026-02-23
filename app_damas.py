@@ -2,7 +2,7 @@ import streamlit as st
 import time
 
 # ==========================================
-# 1. LÓGICA ORIGINAL DO JOGO MANTIDA
+# 1. LÓGICA ORIGINAL DO JOGO (INTACTA)
 # ==========================================
 
 class Movimento:
@@ -154,21 +154,18 @@ def geraMovimentos(tabuleiro, direcao):
             if peca <= 0: continue
             eh_dama = ehDama(peca)
             
-            # Direções baseadas na peça
             movimentos_possiveis = []
-            if direcao == -1 and peca % 2 != 0: # Pretas
+            if direcao == -1 and peca % 2 != 0: 
                 movimentos_possiveis = [(-1, 1), (-1, -1)]
                 if eh_dama: movimentos_possiveis.extend([(1, 1), (1, -1)])
-            elif direcao == 1 and peca % 2 == 0: # Brancas
+            elif direcao == 1 and peca % 2 == 0: 
                 movimentos_possiveis = [(1, 1), (1, -1)]
                 if eh_dama: movimentos_possiveis.extend([(-1, 1), (-1, -1)])
                 
             for dlin, dcol in movimentos_possiveis:
-                # Movimento de Captura
                 if posicaoValida(lin + dlin, col + dcol) and tabuleiro[lin + dlin][col + dcol] > 0 and tabuleiro[lin + dlin][col + dcol] % 2 != peca % 2:
                     if posicaoValida(lin + 2*dlin, col + 2*dcol) and tabuleiro[lin + 2*dlin][col + 2*dcol] == 0:
                         lista.append(Movimento(lin, col, lin + 2*dlin, col + 2*dcol))
-                # Movimento Simples
                 elif posicaoValida(lin + dlin, col + dcol) and tabuleiro[lin + dlin][col + dcol] == 0:
                     lista.append(Movimento(lin, col, lin + dlin, col + dcol))
     return lista
@@ -200,18 +197,58 @@ def minimax(tabuleiro, profundidade, profundidadeMax, maximizando, direcao):
 
 
 # ==========================================
-# 2. INTERFACE STREAMLIT (NOVA PARTE)
+# 2. INTERFACE STREAMLIT COM VISUAL CHESS.COM
 # ==========================================
 
+def aplicar_estilo_chess_com():
+    """Injeta CSS no Streamlit para criar o visual profissional do tabuleiro."""
+    st.markdown("""
+        <style>
+        /* Remove o espaço entre as colunas do tabuleiro */
+        div[data-testid="column"] {
+            padding: 0px !important;
+            gap: 0px !important;
+        }
+        
+        /* Estiliza os botões (Casas Verdes - onde o jogo acontece) */
+        div.stButton > button {
+            height: 70px !important;
+            width: 100% !important;
+            border-radius: 0px !important; /* Remove as bordas arredondadas */
+            border: none !important;
+            background-color: #739552 !important; /* Verde Chess.com */
+            font-size: 38px !important; /* Tamanho da peça */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 !important;
+            box-shadow: none !important;
+        }
+        
+        /* Efeito ao passar o mouse na casa verde */
+        div.stButton > button:hover {
+            background-color: #a9ca7a !important; 
+        }
+
+        /* Estilo para as Casas Claras (onde não se joga) */
+        .casa-clara {
+            background-color: #ebecd0; /* Creme Chess.com */
+            height: 70px;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
 def inicializar_estado():
-    """Configura as variáveis de memória do jogo na primeira execução."""
     if 'tabuleiro' not in st.session_state:
         tabuleiro_inicial = [[0 for _ in range(8)] for _ in range(8)]
         montarTabuleiro(tabuleiro_inicial)
         st.session_state.tabuleiro = tabuleiro_inicial
-        st.session_state.turno_jogador = True # True = Jogador (Pretas), False = IA (Brancas)
-        st.session_state.origem_selecionada = None # Guarda a peça selecionada no 1º clique
-        st.session_state.mensagem = "Sua vez! Selecione uma peça PRETA (●)."
+        st.session_state.turno_jogador = True 
+        st.session_state.origem_selecionada = None 
+        st.session_state.mensagem = "Sua vez! Selecione uma peça Vermelha (🔴)."
 
 def contar_pecas_estado():
     pretas, brancas = 0, 0
@@ -223,68 +260,55 @@ def contar_pecas_estado():
     return pretas, brancas
 
 def clique_casa(lin, col):
-    """Lida com o clique do usuário no tabuleiro."""
-    if not st.session_state.turno_jogador:
-        return # Impede cliques na vez da IA
+    if not st.session_state.turno_jogador: return 
 
     tabuleiro = st.session_state.tabuleiro
     peca_clicada = tabuleiro[lin][col]
 
-    # SE AINDA NÃO SELECIONOU UMA PEÇA (1º Clique)
     if st.session_state.origem_selecionada is None:
-        if peca_clicada > 0 and peca_clicada % 2 != 0: # É uma peça preta (do jogador)?
+        if peca_clicada > 0 and peca_clicada % 2 != 0: 
             st.session_state.origem_selecionada = (lin, col)
-            st.session_state.mensagem = f"Peça em ({lin+1}, {chr(col+97)}) selecionada. Clique no destino."
+            st.session_state.mensagem = "Peça selecionada. Clique no destino."
         else:
-            st.session_state.mensagem = "Por favor, clique em uma de suas peças (Pretas/Ímpares)."
-    
-    # SE JÁ SELECIONOU A PEÇA, AGORA É O DESTINO (2º Clique)
+            st.session_state.mensagem = "Por favor, clique em uma de suas peças (Vermelhas)."
     else:
         lin_orig, col_orig = st.session_state.origem_selecionada
         
-        # Se clicar na mesma peça, desmarca
         if lin_orig == lin and col_orig == col:
             st.session_state.origem_selecionada = None
             st.session_state.mensagem = "Seleção cancelada. Escolha uma peça."
             return
 
-        # Verifica se o movimento é válido gerando as regras
         movimentos_validos = geraMovimentos(tabuleiro, -1)
         movimento_permitido = False
         
-        # Procura se o clique que fizemos está na lista de permitidos
         for mov in movimentos_validos:
             if mov.linOrig == lin_orig and mov.colOrig == col_orig and mov.linDest == lin and mov.colDest == col:
                 movimento_permitido = True
                 break
 
         if movimento_permitido:
-            # Aplica o movimento
             aplicaMovimento(tabuleiro, lin_orig, col_orig, lin, col, -1)
             st.session_state.origem_selecionada = None
             st.session_state.turno_jogador = False
-            st.session_state.mensagem = "Movimento realizado. A IA está pensando..."
+            st.session_state.mensagem = "A IA está pensando..."
         else:
             st.session_state.origem_selecionada = None
             st.session_state.mensagem = "Movimento inválido! Tente novamente."
 
 def jogada_ia():
-    """Executa o algoritmo Minimax para a IA (Brancas)."""
     if not st.session_state.turno_jogador:
         movimentos_ia = geraMovimentos(st.session_state.tabuleiro, 1)
-        
         if len(movimentos_ia) == 0:
             st.session_state.mensagem = "IA sem movimentos. Você venceu!"
             return
 
-        # Força captura se houver (Regra adaptada)
         movs_captura = [m for m in movimentos_ia if abs(m.linDest - m.linOrig) == 2]
-        if movs_captura:
-            movimentos_ia = movs_captura
+        if movs_captura: movimentos_ia = movs_captura
 
         melhor_idx = 0
         melhor_score = -99999
-        profundidadeMax = 3 # Mantive em 3 para a web não ficar muito lenta
+        profundidadeMax = 3 
 
         for i in range(len(movimentos_ia)):
             tab_temp = [[0 for _ in range(8)] for _ in range(8)]
@@ -299,70 +323,59 @@ def jogada_ia():
         aplicaMovimento(st.session_state.tabuleiro, mov_escolhido.linOrig, mov_escolhido.colOrig, mov_escolhido.linDest, mov_escolhido.colDest, 1)
         
         st.session_state.turno_jogador = True
-        st.session_state.mensagem = "A IA jogou. Sua vez!"
+        st.session_state.mensagem = "Sua vez!"
 
 def main():
-    st.set_page_config(page_title="Damas com IA", layout="centered")
+    st.set_page_config(page_title="Damas IA - Premium", layout="centered")
+    aplicar_estilo_chess_com() # Injeta o nosso CSS mágico!
     inicializar_estado()
 
-    st.title("♟️ Jogo de Damas com IA")
+    st.title("♟️ Damas Online")
     
-    # Placar
     pretas, brancas = contar_pecas_estado()
     col1, col2 = st.columns(2)
-    col1.metric("Suas Peças (Pretas ●)", pretas)
-    col2.metric("IA (Brancas ○)", brancas)
+    col1.metric("Você (🔴)", pretas)
+    col2.metric("Computador (⚪)", brancas)
 
-    # Verifica fim de jogo
-    if pretas == 0:
-        st.error("A IA venceu! Mais sorte na próxima.")
-    elif brancas == 0:
-        st.success("🎉 PARABÉNS! Você venceu a IA!")
+    if pretas == 0: st.error("A IA venceu! Mais sorte na próxima.")
+    elif brancas == 0: st.success("🎉 PARABÉNS! Você venceu a IA!")
     else:
-        # Mostra mensagens de status
-        if st.session_state.turno_jogador:
-            st.info(st.session_state.mensagem)
-        else:
-            st.warning(st.session_state.mensagem)
+        if st.session_state.turno_jogador: st.info(st.session_state.mensagem)
+        else: st.warning(st.session_state.mensagem)
 
-    st.markdown("---")
-
-    # Renderiza o Tabuleiro
-    # Vamos usar colunas para simular as casas do tabuleiro
+    # Criação do Tabuleiro Visual
     for lin in range(8):
         cols = st.columns(8)
         for col in range(8):
             casa_valida = (lin + col) % 2 != 0
             peca = st.session_state.tabuleiro[lin][col]
             
-            # Escolhendo o símbolo da peça
-            simbolo = " "
+            # Escolhendo os novos ícones das peças
+            simbolo = ""
             if peca > 0:
-                if peca % 2 == 0: # Brancas
-                    simbolo = "◉" if ehDama(peca) else "○"
-                else: # Pretas
-                    simbolo = "◉" if ehDama(peca) else "●"
+                if peca % 2 == 0: # Brancas (IA)
+                    simbolo = "♔" if ehDama(peca) else "⚪"
+                else: # Pretas/Vermelhas (Jogador)
+                    simbolo = "♚" if ehDama(peca) else "🔴"
 
-            # Se a casa for selecionada no 1º clique, mudamos o visual (Emoji)
+            # Destaca a peça selecionada como se fosse o Chess.com
             if st.session_state.origem_selecionada == (lin, col):
-                simbolo = "⭐"
+                simbolo = "🟡" # Círculo amarelo indicando seleção
 
             with cols[col]:
                 if casa_valida:
-                    # Botão jogável
+                    # Casa Escura (Verde) -> Botão clicável
                     st.button(simbolo, key=f"btn_{lin}_{col}", on_click=clique_casa, args=(lin, col), use_container_width=True)
                 else:
-                    # Casa branca (não jogável)
-                    st.markdown("<div style='background-color: #f0f2f6; height: 38px; border-radius: 5px;'></div>", unsafe_allow_html=True)
+                    # Casa Clara (Creme) -> Bloco HTML sem interação
+                    st.markdown("<div class='casa-clara'></div>", unsafe_allow_html=True)
 
-    # Executa a jogada da IA se for a vez dela
     if not st.session_state.turno_jogador and brancas > 0 and pretas > 0:
         jogada_ia()
-        st.rerun() # Atualiza a tela automaticamente para refletir a jogada da IA
+        st.rerun()
 
-    # Botão de reiniciar
-    st.markdown("---")
-    if st.button("🔄 Reiniciar Jogo", type="primary"):
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    if st.button("🔄 Reiniciar Partida", use_container_width=True):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
