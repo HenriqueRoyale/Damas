@@ -115,9 +115,3 @@ python Tabuleiro.py
 **Henrique Royale**  
 * Estudante de Ciência de Dados e Inteligência Artificial na PUC-Campinas  
 * GitHub: [@HenriqueRoyale](https://github.com/HenriqueRoyale)
-```
-
----
-
-### 💡 Dica Extra para o seu projeto Damas:
-Como o seu projeto usa **Streamlit**, você pode subir ele gratuitamente no **[Streamlit Community Cloud](https://streamlit.io/cloud)** em menos de 2 minutos conectando com a sua conta do GitHub! Depois é só colocar o link do site funcionando no campo **Website / About** do repositório no GitHub para qualquer recrutador jogar direto do navegador sem precisar baixar nada!
